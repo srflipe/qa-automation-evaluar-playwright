@@ -25,10 +25,10 @@ test.describe('Flujo de evaluación del candidato', () => {
     await expect(loginPage.emailInput).toBeVisible();
     await loginPage.login(process.env.CANDIDATE_EMAIL!);
 
-    // Acceso al área autenticada: listado de pruebas del proceso
+    // Acceso al área autenticada: listado de evaluaciones del proceso
     await expect(page).toHaveURL(/\/process\//);
-    await expect(processPage.personalityTestButton).toBeVisible();
-    await expect(processPage.teleworkTestButton).toBeVisible();
+    await expect(processPage.notStartedTab).toBeVisible();
+    await expect(processPage.finishedTab).toBeVisible();
   });
 
   test('2. Prueba matricial: Personalidad', async () => {
@@ -36,12 +36,14 @@ test.describe('Flujo de evaluación del candidato', () => {
     const processPage = new ProcessPage(page);
     const personality = new PersonalityTestPage(page);
 
+    await processPage.notStartedTab.click();
     await processPage.personalityTestButton.click();
     await personality.start();
     await personality.answerAllQuestions();
 
-    // Estado final: aparece en "Finalizadas" con estado "Finalizada"
-    await processPage.expectTestFinished('Personalidad');
+    // Al finalizar, la plataforma vuelve al listado con la siguiente prueba disponible
+    await expect(page).toHaveURL(/\/process\//);
+    await expect(processPage.teleworkTestButton).toBeVisible();
   });
 
   test('3. Prueba de selección múltiple: Teletrabajo', async () => {
@@ -49,12 +51,16 @@ test.describe('Flujo de evaluación del candidato', () => {
     const processPage = new ProcessPage(page);
     const telework = new TeleworkTestPage(page);
 
-    await processPage.goto();
     await processPage.teleworkTestButton.click();
     await telework.start();
     await telework.answerAllQuestions();
 
-    // Estado final: aparece en "Finalizadas" con estado "Finalizada"
-    await processPage.expectTestFinished('Teletrabajo');
+    // Al finalizar, la plataforma vuelve al listado de evaluaciones
+    await expect(page).toHaveURL(/\/process\//);
+  });
+
+  test('4. Estado final: ambas evaluaciones en "Finalizadas"', async () => {
+    const processPage = new ProcessPage(page);
+    await processPage.expectTestsFinished(['Personalidad', 'Teletrabajo']);
   });
 });

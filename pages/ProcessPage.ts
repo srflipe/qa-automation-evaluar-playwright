@@ -4,25 +4,28 @@ export class ProcessPage {
   readonly page: Page;
   readonly personalityTestButton: Locator;
   readonly teleworkTestButton: Locator;
+  readonly notStartedTab: Locator;
   readonly finishedTab: Locator;
+  readonly finishedPanel: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.personalityTestButton = page.getByRole('button', { name: /^Personalidad/ });
     this.teleworkTestButton = page.getByRole('button', { name: /^Teletrabajo/ });
-    this.finishedTab = page.getByRole('tab', { name: /^Finalizadas/ }); // ⚠️ confirmar
+    this.notStartedTab = page.getByRole('tab', { name: 'Sin iniciar' });
+    this.finishedTab = page.getByRole('tab', { name: 'Finalizadas' });
+    this.finishedPanel = page.getByRole('tabpanel', { name: 'Finalizadas' });
   }
 
-  /** Vuelve al listado de pruebas (pestaña por defecto: pendientes) */
-  async goto() {
-    await this.page.goto(`/process/${process.env.PROCESS_ID}`);
-  }
-
-  /** Verifica que la prueba aparece en la pestaña "Finalizadas" con estado "Finalizada" */
-  async expectTestFinished(testName: string) {
+  /** Abre la pestaña "Finalizadas" y verifica que cada prueba aparece con estado "Finalizada" */
+  async expectTestsFinished(testNames: string[]) {
     await this.finishedTab.click();
-    const card = this.page.getByRole('button', { name: new RegExp(`^${testName}`) }); // ⚠️ confirmar
-    await expect(card).toBeVisible();
-    await expect(card).toContainText('Finalizada');
+    await expect(this.finishedTab).toHaveAttribute('aria-selected', 'true');
+
+    for (const testName of testNames) {
+      await expect(this.finishedPanel.getByText(testName, { exact: true })).toBeVisible();
+    }
+    // Un estado "Finalizada" por cada prueba
+    await expect(this.finishedPanel.getByText('Finalizada', { exact: true })).toHaveCount(testNames.length);
   }
 }

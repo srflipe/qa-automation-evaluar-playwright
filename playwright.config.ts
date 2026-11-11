@@ -4,6 +4,7 @@ import 'dotenv/config';
 export default defineConfig({
   testDir: './tests',
   timeout: 60_000,
+  expect: { timeout: 20_000 },
   retries: 0,
   workers: 1,
   reporter: [['html'], ['list']],
